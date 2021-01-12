@@ -107,6 +107,8 @@ public slots:
 	void slot_enableBscanViewProcessing(bool enable);
     void slot_enableBscan2ViewProcessing(bool enable);
     void slot_enableRetardanceViewProcessing(bool enable);
+    void slot_enableIntensityViewProcessing(bool enable);
+    void slot_enableOpticalAxisViewProcessing(bool enable);
 	void slot_enableVolumeViewProcessing(bool enable);
 	void slot_easterEgg();
 	void slot_useCustomResamplingCurve(bool use);
@@ -154,6 +156,8 @@ private:
     QAction* action2D2;
 	QAction* actionEnFaceView;
     QAction* actionRetardance;
+    QAction* actionIntensity;
+    QAction* actionOpticalAxis;
 	QAction* action3D;
 	QAction* actionConsole;
 	QAction* actionUseSidebarKLinCurve;
@@ -168,6 +172,8 @@ private:
     QDockWidget* dock2D2;
 	QDockWidget* dockEnFaceView;
     QDockWidget* dockRetardance;
+    QDockWidget* dockIntensity;
+    QDockWidget* dockOpticalAxis;
 	QDockWidget* dockVolumeView;
 
 	GLWindow3D* volumeWindow;
@@ -175,6 +181,8 @@ private:
     GLWindow2D* bscanWindow2;
 	GLWindow2D* enFaceViewWindow;
     GLWindow2D* retardanceWindow;
+    GLWindow2D* intensityWindow;
+    GLWindow2D* opticalAxisWindow;
     GLWindow2D* enFaceViewWindow2;
 	PlotWindow1D* plot1D;
 
@@ -182,6 +190,8 @@ private:
     bool isDock2D2Closed;
 	bool isDockEnFaceViewClosed;
     bool isDockRetardanceClosed;
+    bool isDockIntensityClosed;
+    bool isDockOpticalAxisClosed;
 	bool isDockVolumeViewClosed;
 
 	QOpenGLContext *context;
@@ -201,6 +211,8 @@ signals:
     void glBufferTextureSizeBscan2(unsigned int width, unsigned int height, unsigned int depth);
     void glBufferTextureSizeEnFaceView(unsigned int width, unsigned int height, unsigned int depth);
     void glBufferTextureSizeRetardance(unsigned int width, unsigned int height, unsigned int depth);
+    void glBufferTextureSizeIntensity(unsigned int width, unsigned int height, unsigned int depth);
+    void glBufferTextureSizeOpticalAxis(unsigned int width, unsigned int height, unsigned int depth);
 	void linesPerBufferChanged(int linesPerBuffer);
 	void closeDock2D();
 	void reopenDock2D();

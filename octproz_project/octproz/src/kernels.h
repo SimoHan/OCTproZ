@@ -72,6 +72,8 @@ extern "C" void cuda_registerGlBufferBscan(GLuint buf);
 extern "C" void cuda_registerGlBufferBscan2(GLuint buf);
 extern "C" void cuda_registerGlBufferEnFaceView(GLuint buf);
 extern "C" void cuda_registerGlBufferRetardance(GLuint buf);
+extern "C" void cuda_registerGlBufferIntensity(GLuint buf);
+extern "C" void cuda_registerGlBufferOpticalAxis(GLuint buf);
 extern "C" void cuda_registerGlBufferVolumeView(GLuint buf);
 
 extern void* cuda_map(cudaGraphicsResource* res, cudaStream_t stream);
@@ -82,9 +84,13 @@ extern "C" void changeDisplayedBscanFrame(unsigned int frameNr, unsigned int dis
 extern "C" void changeDisplayedBscan2Frame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///if framerate is low user can request another bscan to be displayed from already acquired buffer with this function
 extern "C" void changeDisplayedEnFaceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
 extern "C" void changeDisplayedRetardanceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+extern "C" void changeDisplayedIntensityFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+extern "C" void changeDisplayedOpticalAxisFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
 extern "C" inline void updateBscanDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
 extern "C" inline void updateBscan2DisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
 extern "C" inline void updateEnFaceDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
 extern "C" inline void updateRetardanceDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
+extern "C" inline void updateIntensityDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
+extern "C" inline void updateOpticalAxisDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction); ///as soon as new buffer is acquired this function is called and the display buffer gets updated
 
 #endif // KERNELS_H

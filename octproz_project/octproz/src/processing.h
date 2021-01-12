@@ -76,10 +76,14 @@ public slots :
     void slot_updateDisplayedBscan2Frame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
     void slot_updateDisplayedEnFaceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
     void slot_updateDisplayedRetardanceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+    void slot_updateDisplayedIntensityFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+    void slot_updateDisplayedOpticalAxisFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
 	void slot_registerBscanOpenGLbufferWithCuda(unsigned int openGLbufferId);
     void slot_registerBscan2OpenGLbufferWithCuda(unsigned int openGLbufferId);
     void slot_registerEnFaceViewOpenGLbufferWithCuda(unsigned int openGLbufferId);
     void slot_registerRetardanceOpenGLbufferWithCuda(unsigned int openGLbufferId);
+    void slot_registerIntensityOpenGLbufferWithCuda(unsigned int openGLbufferId);
+    void slot_registerOpticalAxisOpenGLbufferWithCuda(unsigned int openGLbufferId);
 	void slot_registerVolumeViewOpenGLbufferWithCuda(unsigned int openGLbufferId);
 	void enableGpu2HostStreaming(bool enableStreaming);
 	void registerRecordHostBuffer(void* buffer, size_t size);
@@ -95,6 +99,8 @@ signals :
     void initOpenGLBScan2();
     void initOpenGLenFaceView();
     void initOpenGLretardance();
+    void initOpenGLintensity();
+    void initOpenGLopticalAxis();
 	void initRawRecorder(RecordingParams params);
 	void initProcessedRecorder(RecordingParams params);
 	void processingDone();

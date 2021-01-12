@@ -74,6 +74,12 @@ OCTproZ::OCTproZ(QWidget *parent) :
 	this->enFaceViewWindow->setMarkerOrigin(LEFT);
     this->retardanceWindow = new GLWindow2D(this);
     this->retardanceWindow->setMarkerOrigin(TOP);
+    this->retardanceWindow->setToColorMap();
+    this->intensityWindow = new GLWindow2D(this);
+    this->intensityWindow->setMarkerOrigin(TOP);
+    this->opticalAxisWindow = new GLWindow2D(this);
+    this->opticalAxisWindow->setMarkerOrigin(TOP);
+
 
 	connect(this->bscanWindow, &GLWindow2D::currentFrameNr, this->enFaceViewWindow, &GLWindow2D::slot_setMarkerPosition);
     connect(this->enFaceViewWindow, &GLWindow2D::currentFrameNr, this->bscanWindow, &GLWindow2D::slot_setMarkerPosition);
@@ -83,10 +89,14 @@ OCTproZ::OCTproZ(QWidget *parent) :
     connect(this->bscanWindow2, &GLWindow2D::dialogAboutToOpen, this, &OCTproZ::slot_closeOpenGLwindows); //GL windows need to be closed to avoid linux bug where QFileDialog is not usable when a GL window is opend in background
     connect(this->enFaceViewWindow, &GLWindow2D::dialogAboutToOpen, this, &OCTproZ::slot_closeOpenGLwindows); //GL windows need to be closed to avoid linux bug where QFileDialog is not usable when a GL window is opend in background
     connect(this->retardanceWindow, &GLWindow2D::dialogAboutToOpen, this, &OCTproZ::slot_closeOpenGLwindows); //GL windows need to be closed to avoid linux bug where QFileDialog is not usable when a GL window is opend in background
+    connect(this->intensityWindow, &GLWindow2D::dialogAboutToOpen, this, &OCTproZ::slot_closeOpenGLwindows); //GL windows need to be closed to avoid linux bug where QFileDialog is not usable when a GL window is opend in background
+    connect(this->opticalAxisWindow, &GLWindow2D::dialogAboutToOpen, this, &OCTproZ::slot_closeOpenGLwindows); //GL windows need to be closed to avoid linux bug where QFileDialog is not usable when a GL window is opend in background
     connect(this->bscanWindow, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
     connect(this->bscanWindow2, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
     connect(this->enFaceViewWindow, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
     connect(this->retardanceWindow, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
+    connect(this->intensityWindow, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
+    connect(this->opticalAxisWindow, &GLWindow2D::dialogClosed, this, &OCTproZ::slot_reopenOpenGLwindows);
 
 	connect(this, &OCTproZ::glBufferTextureSizeBscan, this->bscanWindow, &GLWindow2D::slot_changeBufferAndTextureSize);
 	this->dock2D = new QDockWidget(tr("2D - B-scan"), this);
@@ -105,6 +115,18 @@ OCTproZ::OCTproZ(QWidget *parent) :
     this->dockRetardance->setObjectName("2D - Retardance");
     //this->dock2D->setFeatures(QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetClosable); //make dock not floatable
     connect(this->dockRetardance, &QDockWidget::visibilityChanged, this, &OCTproZ::slot_enableRetardanceViewProcessing);
+
+    connect(this, &OCTproZ::glBufferTextureSizeIntensity, this->intensityWindow, &GLWindow2D::slot_changeBufferAndTextureSize);
+    this->dockIntensity = new QDockWidget(tr("2D - Intensity"), this);
+    this->dockIntensity->setObjectName("2D - Intensity");
+    //this->dock2D->setFeatures(QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetClosable); //make dock not floatable
+    connect(this->dockIntensity, &QDockWidget::visibilityChanged, this, &OCTproZ::slot_enableIntensityViewProcessing);
+
+    connect(this, &OCTproZ::glBufferTextureSizeOpticalAxis, this->opticalAxisWindow, &GLWindow2D::slot_changeBufferAndTextureSize);
+    this->dockOpticalAxis = new QDockWidget(tr("2D - OpticalAxis"), this);
+    this->dockOpticalAxis->setObjectName("2D - OpticalAxis");
+    //this->dock2D->setFeatures(QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetClosable); //make dock not floatable
+    connect(this->dockOpticalAxis, &QDockWidget::visibilityChanged, this, &OCTproZ::slot_enableOpticalAxisViewProcessing);
 
 	connect(this, &OCTproZ::glBufferTextureSizeEnFaceView, this->enFaceViewWindow, &GLWindow2D::slot_changeBufferAndTextureSize);
 	this->dockEnFaceView = new QDockWidget(tr("2D - En Face View"), this);
@@ -154,6 +176,12 @@ OCTproZ::OCTproZ(QWidget *parent) :
     //Retardance window connection
     connect(this->retardanceWindow->getControlPanel(), &ControlPanel2D::displayFrameSettingsChanged, this->signalProcessing, &Processing::slot_updateDisplayedRetardanceFrame);
     connect(this->retardanceWindow, &GLWindow2D::registerBufferCudaGL, this->signalProcessing, &Processing::slot_registerRetardanceOpenGLbufferWithCuda);
+    //Intensity window connection
+    connect(this->intensityWindow->getControlPanel(), &ControlPanel2D::displayFrameSettingsChanged, this->signalProcessing, &Processing::slot_updateDisplayedIntensityFrame);
+    connect(this->intensityWindow, &GLWindow2D::registerBufferCudaGL, this->signalProcessing, &Processing::slot_registerIntensityOpenGLbufferWithCuda);
+    //OpticalAxis window connection
+    connect(this->opticalAxisWindow->getControlPanel(), &ControlPanel2D::displayFrameSettingsChanged, this->signalProcessing, &Processing::slot_updateDisplayedOpticalAxisFrame);
+    connect(this->opticalAxisWindow, &GLWindow2D::registerBufferCudaGL, this->signalProcessing, &Processing::slot_registerOpticalAxisOpenGLbufferWithCuda);
     //En face view window connections:
 	connect(this->enFaceViewWindow->getControlPanel(), &ControlPanel2D::displayFrameSettingsChanged, this->signalProcessing, &Processing::slot_updateDisplayedEnFaceFrame);
 	connect(this->enFaceViewWindow, &GLWindow2D::registerBufferCudaGL, this->signalProcessing, &Processing::slot_registerEnFaceViewOpenGLbufferWithCuda);
@@ -176,9 +204,17 @@ OCTproZ::OCTproZ(QWidget *parent) :
     if(!this->processingInThread){
         connect(this->signalProcessing, &Processing::initOpenGL, this->retardanceWindow, &GLWindow2D::slot_initProcessingThreadOpenGL); //due to opengl context sharing this connect is not necessary
     }
+    if(!this->processingInThread){
+        connect(this->signalProcessing, &Processing::initOpenGL, this->intensityWindow, &GLWindow2D::slot_initProcessingThreadOpenGL); //due to opengl context sharing this connect is not necessary
+    }
+    if(!this->processingInThread){
+        connect(this->signalProcessing, &Processing::initOpenGL, this->opticalAxisWindow, &GLWindow2D::slot_initProcessingThreadOpenGL); //due to opengl context sharing this connect is not necessary
+    }
 	connect(this->signalProcessing, &Processing::initOpenGLenFaceView, this->enFaceViewWindow, &GLWindow2D::slot_registerGLbufferWithCuda);
     connect(this->signalProcessing, &Processing::initOpenGLBScan2, this->bscanWindow2, &GLWindow2D::slot_registerGLbufferWithCuda); //due to opengl context sharing this connect is not necessary
     connect(this->signalProcessing, &Processing::initOpenGLretardance, this->retardanceWindow, &GLWindow2D::slot_registerGLbufferWithCuda); //due to opengl context sharing this connect is not necessary
+    connect(this->signalProcessing, &Processing::initOpenGLintensity, this->intensityWindow, &GLWindow2D::slot_registerGLbufferWithCuda); //due to opengl context sharing this connect is not necessary
+    connect(this->signalProcessing, &Processing::initOpenGLopticalAxis, this->opticalAxisWindow, &GLWindow2D::slot_registerGLbufferWithCuda); //due to opengl context sharing this connect is not necessary
 
     connect(this->signalProcessing, &Processing::initOpenGLenFaceView, this->volumeWindow, &GLWindow3D::slot_registerGLbufferWithCuda);
     processingThread.start();
@@ -226,10 +262,14 @@ OCTproZ::~OCTproZ(){
     delete this->bscanWindow2;
 	delete this->enFaceViewWindow;
     delete this->retardanceWindow;
+    delete this->intensityWindow;
+    delete this->opticalAxisWindow;
 	delete this->dock2D;
     delete this->dock2D2;
 	delete this->dockEnFaceView;
     delete this->dockRetardance;
+    delete this->dockIntensity;
+    delete this->dockOpticalAxis;
 	delete this->dockVolumeView;
 }
 
@@ -264,6 +304,8 @@ void OCTproZ::initActionsAndDocks() {
 	QAction* bscanMarkerAction = this->bscanWindow->getMarkerAction();
     QAction* bscan2MarkerAction = this->bscanWindow2->getMarkerAction();
     QAction* retardanceMarkerAction = this->retardanceWindow->getMarkerAction();
+    QAction* intensityMarkerAction = this->intensityWindow->getMarkerAction();
+    QAction* opticalAxisMarkerAction = this->opticalAxisWindow->getMarkerAction();
 	QAction* enfaceMarkerAction = this->enFaceViewWindow->getMarkerAction();
 
 	bscanMarkerAction->setIcon(QIcon(":/icons/octproz_bscanmarker_icon.png"));
@@ -274,10 +316,17 @@ void OCTproZ::initActionsAndDocks() {
 	enfaceMarkerAction->setToolTip(tr("Display orthogonal marker in en face view"));
     retardanceMarkerAction->setIcon(QIcon(":/icons/octproz_bscanmarker_icon.png"));
     retardanceMarkerAction->setToolTip(tr("Display orthogonal marker in B-scan"));
+    intensityMarkerAction->setIcon(QIcon(":/icons/octproz_bscanmarker_icon.png"));
+    intensityMarkerAction->setToolTip(tr("Display orthogonal marker in B-scan"));
+    opticalAxisMarkerAction->setIcon(QIcon(":/icons/octproz_bscanmarker_icon.png"));
+    opticalAxisMarkerAction->setToolTip(tr("Display orthogonal marker in B-scan"));
 	this->view2DExtrasToolBar->addAction(bscanMarkerAction);
     this->view2DExtrasToolBar->addAction(bscan2MarkerAction);
 	this->view2DExtrasToolBar->addAction(enfaceMarkerAction);
     this->view2DExtrasToolBar->addAction(retardanceMarkerAction);
+    this->view2DExtrasToolBar->addAction(intensityMarkerAction);
+    this->view2DExtrasToolBar->addAction(opticalAxisMarkerAction);
+
 
 	this->setCentralWidget(this->sidebar->getDock());
 
@@ -321,7 +370,15 @@ void OCTproZ::initActionsAndDocks() {
 
     this->prepareDockWidget(this->dockRetardance, this->retardanceWindow, this->actionRetardance, QIcon(":/icons/octproz_bscan_icon.png"), "2D - Retardance");
     this->dockRetardance->setFloating(false);
-    this->dockRetardance->setVisible(true);
+    this->dockRetardance->setVisible(false);
+
+    this->prepareDockWidget(this->dockIntensity, this->intensityWindow, this->actionIntensity, QIcon(":/icons/octproz_bscan_icon.png"), "2D - Intensity");
+    this->dockIntensity->setFloating(false);
+    this->dockIntensity->setVisible(false);
+
+    this->prepareDockWidget(this->dockOpticalAxis, this->opticalAxisWindow, this->actionOpticalAxis, QIcon(":/icons/octproz_bscan_icon.png"), "2D - OpticalAxis");
+    this->dockOpticalAxis->setFloating(false);
+    this->dockOpticalAxis->setVisible(false);
 
 	this->prepareDockWidget(this->dockVolumeView, this->volumeWindow, this->action3D, QIcon(":/icons/octproz_volume_icon.png"), "3D - Volume");
 	this->dockVolumeView->setFloating(false);
@@ -363,6 +420,10 @@ void OCTproZ::initGui() {
 	connect(this->enFaceViewWindow, &GLWindow2D::error, this->console, &MessageConsole::displayError);
     connect(this->retardanceWindow, &GLWindow2D::info, this->console, &MessageConsole::displayInfo);
     connect(this->retardanceWindow, &GLWindow2D::error, this->console, &MessageConsole::displayError);
+    connect(this->intensityWindow, &GLWindow2D::info, this->console, &MessageConsole::displayInfo);
+    connect(this->intensityWindow, &GLWindow2D::error, this->console, &MessageConsole::displayError);
+    connect(this->opticalAxisWindow, &GLWindow2D::info, this->console, &MessageConsole::displayInfo);
+    connect(this->opticalAxisWindow, &GLWindow2D::error, this->console, &MessageConsole::displayError);
 	connect(this->volumeWindow, &GLWindow3D::info, this->console, &MessageConsole::displayInfo);
 	connect(this->volumeWindow, &GLWindow3D::error, this->console, &MessageConsole::displayError);
 
@@ -635,6 +696,14 @@ void OCTproZ::slot_record() {
             QString fileName = timestamp + recName + "_" + "retardance_snapshot" + ".png";
             this->retardanceWindow->slot_saveScreenshot(savePath, fileName);
         }
+        if(this->intensityWindow->isVisible()) {
+            QString fileName = timestamp + recName + "_" + "intensity_snapshot" + ".png";
+            this->intensityWindow->slot_saveScreenshot(savePath, fileName);
+        }
+        if(this->opticalAxisWindow->isVisible()) {
+            QString fileName = timestamp + recName + "_" + "opticalAxis_snapshot" + ".png";
+            this->opticalAxisWindow->slot_saveScreenshot(savePath, fileName);
+        }
 		if(this->volumeWindow->isVisible()) {
 			QString fileName = timestamp + recName + "_" + "volume_snapshot" + ".png";
 			this->volumeWindow->slot_saveScreenshot(savePath, fileName);
@@ -765,6 +834,8 @@ void OCTproZ::slot_updateAcquistionParameter(AcquisitionParams newParams){
         emit glBufferTextureSizeBscan(newParams.samplesPerLine/2, newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume);
         emit glBufferTextureSizeBscan2(newParams.samplesPerLine/2, newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume);
         emit glBufferTextureSizeRetardance(newParams.samplesPerLine/2, newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume);
+        emit glBufferTextureSizeIntensity(newParams.samplesPerLine/2, newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume);
+        emit glBufferTextureSizeOpticalAxis(newParams.samplesPerLine/2, newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume);
 		//emit glBufferTextureSizeEnFaceView(newParams.bscansPerBuffer, newParams.ascansPerBscan, newParams.samplesPerLine/2);
 		emit glBufferTextureSizeEnFaceView(newParams.ascansPerBscan, newParams.bscansPerBuffer*newParams.buffersPerVolume, newParams.samplesPerLine/2);
 
@@ -801,6 +872,14 @@ void OCTproZ::slot_closeOpenGLwindows() {
         this->isDockRetardanceClosed = true;
         this->dockRetardance->setVisible(false);
     }
+    if (this->dockIntensity->isVisible()) {
+        this->isDockIntensityClosed = true;
+        this->dockIntensity->setVisible(false);
+    }
+    if (this->dockOpticalAxis->isVisible()) {
+        this->isDockOpticalAxisClosed = true;
+        this->dockOpticalAxis->setVisible(false);
+    }
 	if (this->dockVolumeView->isVisible()) {
 		this->isDockVolumeViewClosed = true;
 		this->dockVolumeView->setVisible(false);
@@ -829,6 +908,16 @@ void OCTproZ::slot_reopenOpenGLwindows() {
         this->isDockRetardanceClosed = false;
         this->dockRetardance->setVisible(true);
         this->dockRetardance->setFocus();
+    }
+    if (!this->dockIntensity->isVisible() && this->isDockIntensityClosed) {
+        this->isDockIntensityClosed = false;
+        this->dockIntensity->setVisible(true);
+        this->dockIntensity->setFocus();
+    }
+    if (!this->dockOpticalAxis->isVisible() && this->isDockOpticalAxisClosed) {
+        this->isDockOpticalAxisClosed = false;
+        this->dockOpticalAxis->setVisible(true);
+        this->dockOpticalAxis->setFocus();
     }
 	if (!this->dockVolumeView->isVisible() && this->isDockVolumeViewClosed) {
 		this->isDockVolumeViewClosed = false;
@@ -878,6 +967,14 @@ void OCTproZ::slot_enableBscan2ViewProcessing(bool enable) {
 
 void OCTproZ::slot_enableRetardanceViewProcessing(bool enable) {
     this->octParams->retardanceViewEnabled = enable;
+}
+
+void OCTproZ::slot_enableIntensityViewProcessing(bool enable) {
+    this->octParams->intensityViewEnabled = enable;
+}
+
+void OCTproZ::slot_enableOpticalAxisViewProcessing(bool enable) {
+    this->octParams->opticalAxisViewEnabled = enable;
 }
 
 void OCTproZ::slot_enableVolumeViewProcessing(bool enable) {

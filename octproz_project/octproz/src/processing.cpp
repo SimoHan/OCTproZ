@@ -259,6 +259,32 @@ void Processing::slot_updateDisplayedRetardanceFrame(unsigned int frameNr, unsig
     }
 }
 
+void Processing::slot_updateDisplayedIntensityFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction){
+    this->octParams->frameNrIntensity = frameNr;
+    this->octParams->functionFramesIntensity = displayFunctionFrames;
+    this->octParams->displayFunctionIntensity = displayFunction;
+
+    if(this->isProcessing && this->buffersPerSecond > 0.0 && this->buffersPerSecond < LOW_FRAMERATE){
+        this->context->makeCurrent(this->surface);
+        changeDisplayedIntensityFrame(frameNr, displayFunctionFrames, displayFunction);
+        this->context->swapBuffers(this->surface);
+        this->context->doneCurrent();
+    }
+}
+
+void Processing::slot_updateDisplayedOpticalAxisFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction){
+    this->octParams->frameNrOpticalAxis = frameNr;
+    this->octParams->functionFramesOpticalAxis = displayFunctionFrames;
+    this->octParams->displayFunctionOpticalAxis = displayFunction;
+
+    if(this->isProcessing && this->buffersPerSecond > 0.0 && this->buffersPerSecond < LOW_FRAMERATE){
+        this->context->makeCurrent(this->surface);
+        changeDisplayedOpticalAxisFrame(frameNr, displayFunctionFrames, displayFunction);
+        this->context->swapBuffers(this->surface);
+        this->context->doneCurrent();
+    }
+}
+
 void Processing::slot_registerBscanOpenGLbufferWithCuda(unsigned int bufferId){
 	if(this->context->makeCurrent(this->surface)){
 		cuda_registerGlBufferBscan(bufferId);
@@ -283,6 +309,20 @@ void Processing::slot_registerEnFaceViewOpenGLbufferWithCuda(unsigned int buffer
 void Processing::slot_registerRetardanceOpenGLbufferWithCuda(unsigned int bufferId){
     if(this->context->makeCurrent(this->surface)){
         cuda_registerGlBufferRetardance(bufferId);
+        this->context->doneCurrent();
+    }
+}
+
+void Processing::slot_registerIntensityOpenGLbufferWithCuda(unsigned int bufferId){
+    if(this->context->makeCurrent(this->surface)){
+        cuda_registerGlBufferIntensity(bufferId);
+        this->context->doneCurrent();
+    }
+}
+
+void Processing::slot_registerOpticalAxisOpenGLbufferWithCuda(unsigned int bufferId){
+    if(this->context->makeCurrent(this->surface)){
+        cuda_registerGlBufferOpticalAxis(bufferId);
         this->context->doneCurrent();
     }
 }

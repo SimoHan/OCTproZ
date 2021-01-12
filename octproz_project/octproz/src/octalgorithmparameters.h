@@ -114,14 +114,20 @@ public:
     unsigned int frameNrBScan2; /// Current number of the displayed frame.
 	unsigned int frameNrEnFaceView;
     unsigned int frameNrRetardance;
+    unsigned int frameNrIntensity;
+    unsigned int frameNrOpticalAxis;
 	unsigned int functionFramesEnFaceView;
     unsigned int functionFramesRetardance;
+    unsigned int functionFramesIntensity;
+    unsigned int functionFramesOpticalAxis;
 	unsigned int functionFramesBscan;
     unsigned int functionFramesBscan2;
 	int displayFunctionBscan;
     int displayFunctionBscan2;
 	int displayFunctionEnFaceView;
     int displayFunctionRetardance;
+    int displayFunctionIntensity;
+    int displayFunctionOpticalAxis;
 	enum DISPLAY_FUNCTION {
 		AVERAGING,
 		MIP
@@ -130,6 +136,8 @@ public:
     bool bscan2ViewEnabled;
 	bool enFaceViewEnabled;
     bool retardanceViewEnabled;
+    bool intensityViewEnabled;
+    bool opticalAxisViewEnabled;
 	bool volumeViewEnabled;
 
 	//recording

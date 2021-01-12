@@ -78,18 +78,27 @@ OctAlgorithmParameters::OctAlgorithmParameters()
     this->frameNrBScan2 = 0;
 	this->frameNrEnFaceView = 0;
     this->frameNrRetardance = 0;
+    this->frameNrIntensity = 0;
+    this->frameNrOpticalAxis = 0;
 	this->functionFramesEnFaceView = 0;
     this->functionFramesRetardance = 0;
+    this->functionFramesIntensity = 0;
+    this->functionFramesOpticalAxis = 0;
 	this->functionFramesBscan = 0;
     this->functionFramesBscan2 = 0;
 	this->displayFunctionBscan = 0;
     this->displayFunctionBscan2 = 0;
 	this->displayFunctionEnFaceView = 0;
     this->displayFunctionRetardance = 0;
+    this->displayFunctionIntensity = 0;
+    this->displayFunctionOpticalAxis = 0;
+
 	this->bscanViewEnabled = true;
     this->bscan2ViewEnabled = true;
 	this->enFaceViewEnabled = true;
     this->retardanceViewEnabled = true;
+    this->intensityViewEnabled = true;
+    this->opticalAxisViewEnabled = true;
 	this->volumeViewEnabled = false;
 
 	this->samplesPerLine = 100;

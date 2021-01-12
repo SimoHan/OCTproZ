@@ -50,6 +50,8 @@ cudaGraphicsResource* cuBufHandleBscan = NULL;
 cudaGraphicsResource* cuBufHandleBscan2 = NULL;
 cudaGraphicsResource* cuBufHandleEnFaceView = NULL;
 cudaGraphicsResource* cuBufHandleRetardance = NULL;
+cudaGraphicsResource* cuBufHandleIntensity = NULL;
+cudaGraphicsResource* cuBufHandleOpticalAxis = NULL;
 cudaGraphicsResource* cuBufHandleVolumeView = NULL;
 
 void* d_inputBuffer1;
@@ -773,6 +775,96 @@ __global__ void updateDisplayedRetardanceFrame(float *displayBuffer, const float
     }
 }
 
+__global__ void updateDisplayedIntensityFrame(float *displayBuffer, const float* processedVolume, const unsigned int bscansPerVolume, const unsigned int bscansPerComponent, const unsigned int samplesInSingleFrame, const unsigned int frameNr, const unsigned int displayFunctionFrames, const int displayFunction) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (i < samplesInSingleFrame) {
+        double component1 = processedVolume[(frameNr+bscansPerComponent*(frameNr/(bscansPerComponent)))*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+        double component2 = processedVolume[(frameNr+bscansPerComponent*(1+frameNr/(bscansPerComponent)))*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+
+        displayBuffer[i] = component1 + component2;
+
+
+        //todo: optimize averaging and MIP! Use Parallel Reduction for averaging! Use enum instead of int
+        if(displayFunctionFrames > 1){
+            switch(displayFunction){
+            case 0: //Averaging
+                int frameCount = 1;
+                for (int j = 1; j <= displayFunctionFrames; j++){
+                    int frameForAveraging = frameNr+j;
+                    if(frameForAveraging < bscansPerVolume){
+                        displayBuffer[i] += processedVolume[frameForAveraging*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+                        frameCount++;
+                    }
+                }
+                displayBuffer[i] = displayBuffer[i]/frameCount;
+                break;
+            case 1: //MIP
+                float tmp = 0;
+                if(displayFunctionFrames > 1){
+                    for (int j = 1; j <= displayFunctionFrames; j++){
+                        int frameForMIP = frameNr+j;
+                        if(frameForMIP < bscansPerVolume){
+                            if(tmp<processedVolume[frameForMIP*samplesInSingleFrame + (samplesInSingleFrame-1) - i]){
+                                tmp = processedVolume[frameForMIP*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+                            }
+                        }
+                    }
+                    displayBuffer[i] = tmp;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+__global__ void updateDisplayedOpticalAxisFrame(float *displayBuffer, const float* processedVolume, const unsigned int bscansPerVolume, const unsigned int bscansPerComponent, const unsigned int samplesInSingleFrame, const unsigned int frameNr, const unsigned int displayFunctionFrames, const int displayFunction) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (i < samplesInSingleFrame) {
+        double component1 = processedVolume[(frameNr+bscansPerComponent*(frameNr/(bscansPerComponent)))*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+        double component2 = processedVolume[(frameNr+bscansPerComponent*(1+frameNr/(bscansPerComponent)))*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+
+        displayBuffer[i] = component1 + component2;
+
+
+        //todo: optimize averaging and MIP! Use Parallel Reduction for averaging! Use enum instead of int
+        if(displayFunctionFrames > 1){
+            switch(displayFunction){
+            case 0: //Averaging
+                int frameCount = 1;
+                for (int j = 1; j <= displayFunctionFrames; j++){
+                    int frameForAveraging = frameNr+j;
+                    if(frameForAveraging < bscansPerVolume){
+                        displayBuffer[i] += processedVolume[frameForAveraging*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+                        frameCount++;
+                    }
+                }
+                displayBuffer[i] = displayBuffer[i]/frameCount;
+                break;
+            case 1: //MIP
+                float tmp = 0;
+                if(displayFunctionFrames > 1){
+                    for (int j = 1; j <= displayFunctionFrames; j++){
+                        int frameForMIP = frameNr+j;
+                        if(frameForMIP < bscansPerVolume){
+                            if(tmp<processedVolume[frameForMIP*samplesInSingleFrame + (samplesInSingleFrame-1) - i]){
+                                tmp = processedVolume[frameForMIP*samplesInSingleFrame + (samplesInSingleFrame-1) - i];
+                            }
+                        }
+                    }
+                    displayBuffer[i] = tmp;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
 __global__ void updateDisplayedVolume(const float* processedBuffer, const unsigned int samplesInBuffer, const unsigned int currBufferNr, const unsigned int bscansPerBuffer, dim3 textureDim) {
     for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < samplesInBuffer; i += blockDim.x * gridDim.x){
         int width = textureDim.x; //Ascans per Bscan
@@ -1061,6 +1153,44 @@ extern "C" void changeDisplayedRetardanceFrame(unsigned int frameNr, unsigned in
     }
 }
 
+extern "C" void changeDisplayedIntensityFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction) {
+    void* d_intensityDisplayBuffer = NULL;
+    if (cuBufHandleIntensity != NULL) {
+        d_intensityDisplayBuffer = cuda_map(cuBufHandleIntensity, userRequestStream);
+    }
+    //update 2D b-scan display
+    int width = signalLength;
+    int height = ascansPerBscan;
+    int depth = bscansPerBuffer*buffersPerVolume;
+    int samplesPerFrame = width * height;
+    if (d_intensityDisplayBuffer != NULL) {
+        frameNr = frameNr >= 0 && frameNr < depth ? frameNr : 0;
+        updateDisplayedIntensityFrame<<<gridSize/2, blockSize, 0, userRequestStream>>>((float*)d_intensityDisplayBuffer, d_processedBuffer, depth, bscansPerBuffer / 2, samplesPerFrame / 2, frameNr, displayFunctionFrames, displayFunction);
+    }
+    if (cuBufHandleIntensity != NULL) {
+       cuda_unmap(cuBufHandleIntensity, userRequestStream);
+    }
+}
+
+extern "C" void changeDisplayedOpticalAxisFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction) {
+    void* d_opticalAxisDisplayBuffer = NULL;
+    if (cuBufHandleOpticalAxis != NULL) {
+        d_opticalAxisDisplayBuffer = cuda_map(cuBufHandleOpticalAxis, userRequestStream);
+    }
+    //update 2D b-scan display
+    int width = signalLength;
+    int height = ascansPerBscan;
+    int depth = bscansPerBuffer*buffersPerVolume;
+    int samplesPerFrame = width * height;
+    if (d_opticalAxisDisplayBuffer != NULL) {
+        frameNr = frameNr >= 0 && frameNr < depth ? frameNr : 0;
+        updateDisplayedOpticalAxisFrame<<<gridSize/2, blockSize, 0, userRequestStream>>>((float*)d_opticalAxisDisplayBuffer, d_processedBuffer, depth, bscansPerBuffer / 2, samplesPerFrame / 2, frameNr, displayFunctionFrames, displayFunction);
+    }
+    if (cuBufHandleOpticalAxis != NULL) {
+       cuda_unmap(cuBufHandleOpticalAxis, userRequestStream);
+    }
+}
+
 extern "C" inline void updateBscanDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction) {
     void* d_bscanDisplayBuffer = NULL;
     if (cuBufHandleBscan != NULL) {
@@ -1133,6 +1263,44 @@ extern "C" inline void updateRetardanceDisplayBuffer(unsigned int frameNr, unsig
     }
     if (cuBufHandleRetardance != NULL) {
         cuda_unmap(cuBufHandleRetardance, displayStream);
+    }
+}
+
+extern "C" inline void updateIntensityDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction) {
+    void* d_intensityDisplayBuffer = NULL;
+    if (cuBufHandleIntensity != NULL) {
+        d_intensityDisplayBuffer = cuda_map(cuBufHandleIntensity, displayStream);
+    }
+    //update 2D b-scan display
+    int width = signalLength;
+    int height = ascansPerBscan;
+    int depth = bscansPerBuffer * buffersPerVolume;
+    int samplesPerFrame = width * height;
+    if (d_intensityDisplayBuffer != NULL) {
+        frameNr = frameNr >= 0 && frameNr < depth ? frameNr : 0;
+        updateDisplayedIntensityFrame<<<gridSize/2, blockSize, 0, displayStream>>>((float*)d_intensityDisplayBuffer, d_processedBuffer, depth, bscansPerBuffer / 2, samplesPerFrame / 2, frameNr, displayFunctionFrames, displayFunction);
+    }
+    if (cuBufHandleIntensity != NULL) {
+        cuda_unmap(cuBufHandleIntensity, displayStream);
+    }
+}
+
+extern "C" inline void updateOpticalAxisDisplayBuffer(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction) {
+    void* d_opticalAxisDisplayBuffer = NULL;
+    if (cuBufHandleOpticalAxis != NULL) {
+        d_opticalAxisDisplayBuffer = cuda_map(cuBufHandleOpticalAxis, displayStream);
+    }
+    //update 2D b-scan display
+    int width = signalLength;
+    int height = ascansPerBscan;
+    int depth = bscansPerBuffer * buffersPerVolume;
+    int samplesPerFrame = width * height;
+    if (d_opticalAxisDisplayBuffer != NULL) {
+        frameNr = frameNr >= 0 && frameNr < depth ? frameNr : 0;
+        updateDisplayedOpticalAxisFrame<<<gridSize/2, blockSize, 0, displayStream>>>((float*)d_opticalAxisDisplayBuffer, d_processedBuffer, depth, bscansPerBuffer / 2, samplesPerFrame / 2, frameNr, displayFunctionFrames, displayFunction);
+    }
+    if (cuBufHandleOpticalAxis != NULL) {
+        cuda_unmap(cuBufHandleOpticalAxis, displayStream);
     }
 }
 
@@ -1345,6 +1513,12 @@ extern "C" void octCudaPipeline(void* h_inputSignal) {
     }
     if(params->retardanceViewEnabled){
         updateRetardanceDisplayBuffer(params->frameNrRetardance, params->functionFramesRetardance, params->displayFunctionRetardance);
+    }    
+    if(params->intensityViewEnabled){
+        updateIntensityDisplayBuffer(params->frameNrIntensity, params->functionFramesIntensity, params->displayFunctionIntensity);
+    }
+    if(params->opticalAxisViewEnabled){
+        updateOpticalAxisDisplayBuffer(params->frameNrOpticalAxis, params->functionFramesOpticalAxis, params->displayFunctionOpticalAxis);
     }
     if(params->volumeViewEnabled){
         updateVolumeDisplayBuffer(d_currBuffer, bufferNumberInVolume, bscansPerBuffer);
@@ -1383,6 +1557,16 @@ extern "C" void cuda_registerGlBufferEnFaceView(GLuint buf) {
 }
 extern "C" void cuda_registerGlBufferRetardance(GLuint buf) {
     if (cudaGraphicsGLRegisterBuffer(&cuBufHandleRetardance, buf, cudaGraphicsRegisterFlagsWriteDiscard) != cudaSuccess) {
+        printf("Cuda: Failed to register buffer %u\n", buf);
+    }
+}
+extern "C" void cuda_registerGlBufferIntensity(GLuint buf) {
+    if (cudaGraphicsGLRegisterBuffer(&cuBufHandleIntensity, buf, cudaGraphicsRegisterFlagsWriteDiscard) != cudaSuccess) {
+        printf("Cuda: Failed to register buffer %u\n", buf);
+    }
+}
+extern "C" void cuda_registerGlBufferOpticalAxis(GLuint buf) {
+    if (cudaGraphicsGLRegisterBuffer(&cuBufHandleOpticalAxis, buf, cudaGraphicsRegisterFlagsWriteDiscard) != cudaSuccess) {
         printf("Cuda: Failed to register buffer %u\n", buf);
     }
 }

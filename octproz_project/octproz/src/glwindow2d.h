@@ -99,6 +99,7 @@ public:
 	ControlPanel2D* getControlPanel()const {return this->panel;}
 	FRAME_EDGE getMarkerOrigin() const {return this->markerOrigin;}
 	void setMarkerOrigin(FRAME_EDGE markerOrigin);
+    void setToColorMap();
 	QAction* getMarkerAction(){return this->markerAction;}
 
 
@@ -118,6 +119,7 @@ private:
 	//OctAlgorithmParameters::DISPLAY_FUNCTION displayFuntion;
 	unsigned int markerPosition;
 	bool markerVisible;
+    bool isColorMap;
 
 	QMenu* contextMenu;
 	QAction* keepAspectRatioAction;
