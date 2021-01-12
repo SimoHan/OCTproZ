@@ -30,6 +30,7 @@ VirtualOCTSystem::VirtualOCTSystem() {
 	this->settingsDialog = static_cast<QDialog*>(this->systemDialog);
 	this->name = "Virtual OCT System";
 	this->file = nullptr;
+    this->file2 = nullptr;
 	this->multiBuffer = nullptr;
 
 	connect(this->systemDialog, &VirtualOCTSystemSettingsDialog::settingsUpdated, this, &VirtualOCTSystem::slot_updateParams);
@@ -44,17 +45,24 @@ VirtualOCTSystem::~VirtualOCTSystem() {
 bool VirtualOCTSystem::init() {
 	//open file
 	QString fileName;
+        QString file2Name;
 	if (this->currParams.filePath.size() < 2) {
 		emit error(tr("No file selected for virtual OCT system."));
 		return false;
 	}else{
 		fileName = this->currParams.filePath;
+                file2Name = this->currParams.file2Path;
 	}
 	this->file = fopen(fileName.toLatin1(), "r");
 	if (file == nullptr) {
 		emit error(tr("Unable to open file for virtual OCT system!"));
 		return false;
 	}
+    this->file2 = fopen(file2Name.toLatin1(), "r");
+    if (file2 == nullptr) {
+        emit error(tr("Unable to open file for virtual OCT system!"));
+        return false;
+    }
 
 	//allocate buffer memory
 	size_t bufferSize = currParams.width*currParams.height*currParams.depth*ceil((double)this->currParams.bitDepth / 8.0);
@@ -124,76 +132,85 @@ void VirtualOCTSystem::settingsLoaded(QVariantMap settings){
 }
 
 void VirtualOCTSystem::acqcuisitionSimulation(){
-	//calculate size of buffer
-	uint numberOfElements = this->currParams.depth * currParams.width * currParams.height;
-	uint sizeOfElement = ceil((double)this->currParams.bitDepth / 8.0);
+        //calculate size of buffer
+        uint numberOfElements = this->currParams.depth * currParams.width * currParams.height;
+        uint sizeOfElement = ceil((double)this->currParams.bitDepth / 8.0);
 
-	//read data from file into first buffer
-	void* buf = static_cast<void*>(this->buffer->bufferArray[0]);
-	fread(buf, sizeOfElement, numberOfElements, this->file);
+        //read data from file into first buffer
+        void* buf = static_cast<void*>(this->buffer->bufferArray[0]);
+        fread(buf, sizeOfElement, numberOfElements, this->file);
 
-	//set position indicater associated with this->file
-	if(currParams.buffersFromFile == 2){
-		fseek(this->file, numberOfElements*sizeOfElement, SEEK_SET);
-	}else{
-		rewind(this->file);
-	}
+        //set position indicater associated with this->file
+        if(currParams.buffersFromFile == 2){
+                fseek(this->file, numberOfElements*sizeOfElement, SEEK_SET);
+        }else{
+                rewind(this->file);
+        }
 
-	//read data from file into second buffer
-	buf = static_cast<void*>(this->buffer->bufferArray[1]);
-	fread(buf, sizeOfElement, numberOfElements, this->file);
+        //read data from file into second buffer
+        buf = static_cast<void*>(this->buffer->bufferArray[1]);
+        fread(buf, sizeOfElement, numberOfElements, this->file);
 
-	//close file
-	fclose(this->file);
-	qDebug() << "file closed";
+        //close file
+        fclose(this->file);
+        qDebug() << "file closed";
 
-	//acquisition begins!
-	emit enableGui(false);
-	this->acqusitionRunning = true;
-	this->buffer->currIndex = 1;
-	emit acquisitionStarted(this);
-	while (this->acqusitionRunning) {
+        //acquisition begins!
+        emit enableGui(false);
+        this->acqusitionRunning = true;
+        this->buffer->currIndex = 1;
+        emit acquisitionStarted(this);
+        while (this->acqusitionRunning) {
 
-		//wait untill processing thread is done with previous acquisition buffer. This is not necessary in real oct systems and may even slow down the overall processing speed. In real oct systems just check the bufferReadyArray flag of next buffer.
-		while(this->buffer->bufferReadyArray[buffer->currIndex] == true && this->acqusitionRunning){
-			QThread::usleep(100);
-			QCoreApplication::processEvents();
-		}
+                //wait untill processing thread is done with previous acquisition buffer. This is not necessary in real oct systems and may even slow down the overall processing speed. In real oct systems just check the bufferReadyArray flag of next buffer.
+                while(this->buffer->bufferReadyArray[buffer->currIndex] == true && this->acqusitionRunning){
+                        QThread::usleep(100);
+                        QCoreApplication::processEvents();
+                }
 
-		//calculate index of next buffer
-		int nextIndex = (this->buffer->currIndex+1)%2;
+                //calculate index of next buffer
+                int nextIndex = (this->buffer->currIndex+1)%2;
 
-		//set acquisition buffer index, so that processing thread knows current buffer
-		this->buffer->currIndex = nextIndex;
+                //set acquisition buffer index, so that processing thread knows current buffer
+                this->buffer->currIndex = nextIndex;
 
-		//check bufferReadyArray flag to see if acquisition system is allowed to reuse this buffer
-		if(buffer->bufferReadyArray[nextIndex] == false){
+                //check bufferReadyArray flag to see if acquisition system is allowed to reuse this buffer
+                if(buffer->bufferReadyArray[nextIndex] == false){
 
-			//actual data acquisition could be placed here. the content of this->buffer->bufferArray[nextIndex] could be modified here, but the acquisition buffer already contains the desired data so we just set the bufferReadyArray to true
-			//set bufferReadyArray to true to allow processing of buffer
-			this->buffer->bufferReadyArray[nextIndex] = true;
+                        //actual data acquisition could be placed here. the content of this->buffer->bufferArray[nextIndex] could be modified here, but the acquisition buffer already contains the desired data so we just set the bufferReadyArray to true
+                        //set bufferReadyArray to true to allow processing of buffer
+                        this->buffer->bufferReadyArray[nextIndex] = true;
 
-		}
-		//user defined wait time
-		QThread::usleep((this->currParams.waitTimeUs));
-	}
+                }
+                //user defined wait time
+                QThread::usleep((this->currParams.waitTimeUs));
+        }
 }
 
 void VirtualOCTSystem::acquisitionSimulationWithMultiFileBuffers() {
 	//calculate size of buffer
-	uint numberOfElements = this->currParams.depth * currParams.width * currParams.height;
+    uint numberOfElements = this->currParams.depth * currParams.width * currParams.height;
+    uint elementsPerBscan = this->currParams.width * currParams.height;
 	uint sizeOfElement = ceil((double)this->currParams.bitDepth / 8.0);
-	size_t bufferSizeInBytes = numberOfElements*sizeOfElement;
+    size_t bufferSizeInBytes = numberOfElements*sizeOfElement;
+    int bscansPerBuffer = numberOfElements / elementsPerBscan;
 
-	//read data from file into file buffers
-	for(int i = 0; i < currParams.buffersFromFile; i++){
-		void* buf = static_cast<void*>(this->multiBuffer->bufferArray[i]);
-		fseek(this->file, i*numberOfElements*sizeOfElement, SEEK_SET);
-		fread(buf, sizeOfElement, numberOfElements, this->file);
-	}
 
-	//close file
-	fclose(this->file);
+    for(int i = 0; i < currParams.buffersFromFile; i++){
+        void* buf = static_cast<void*>(this->multiBuffer->bufferArray[i]);
+            for(int j = 0; j < (bscansPerBuffer / this->currParams.bscansPerComponent) * 2; j++) {
+                fseek(this->file, (i * bufferSizeInBytes + j * this->currParams.bscansPerComponent * elementsPerBscan * sizeOfElement), SEEK_SET);
+                fread((void*)((char*)buf + j * this->currParams.bscansPerComponent * elementsPerBscan * sizeOfElement), sizeOfElement, this->currParams.bscansPerComponent * elementsPerBscan, this->file);
+                j++;
+                fseek(this->file2, (i * bufferSizeInBytes + j * this->currParams.bscansPerComponent * elementsPerBscan * sizeOfElement), SEEK_SET);
+                fread((void*)((char*)buf + j * this->currParams.bscansPerComponent * elementsPerBscan * sizeOfElement), sizeOfElement, this->currParams.bscansPerComponent * elementsPerBscan, this->file2);
+    }
+    }
+
+    //close file
+    fclose(this->file);
+    fclose(this->file2);
+
 	qDebug() << "file closed";
 
 	//acquisition begins!
@@ -241,6 +258,7 @@ void VirtualOCTSystem::slot_updateParams(simulatorParams newParams){
 	params.ascansPerBscan = newParams.height;
 	params.bscansPerBuffer = newParams.depth;
 	params.buffersPerVolume = newParams.buffersPerVolume;
+    params.bscansPerComponent = newParams.bscansPerComponent;
 	params.bitDepth = newParams.bitDepth;
 	this->params->slot_updateParams(params);
 

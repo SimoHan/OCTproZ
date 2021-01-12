@@ -105,6 +105,8 @@ public slots:
 	void slot_recordingDone();
 	void slot_enableEnFaceViewProcessing(bool enable);
 	void slot_enableBscanViewProcessing(bool enable);
+    void slot_enableBscan2ViewProcessing(bool enable);
+    void slot_enableRetardanceViewProcessing(bool enable);
 	void slot_enableVolumeViewProcessing(bool enable);
 	void slot_easterEgg();
 	void slot_useCustomResamplingCurve(bool use);
@@ -149,7 +151,9 @@ private:
 	QAction* actionSystemSettings;
 	QAction* action1D;
 	QAction* action2D;
+    QAction* action2D2;
 	QAction* actionEnFaceView;
+    QAction* actionRetardance;
 	QAction* action3D;
 	QAction* actionConsole;
 	QAction* actionUseSidebarKLinCurve;
@@ -161,16 +165,23 @@ private:
 	QDockWidget* dockConsole;
 	QDockWidget* dock1D;
 	QDockWidget* dock2D;
+    QDockWidget* dock2D2;
 	QDockWidget* dockEnFaceView;
+    QDockWidget* dockRetardance;
 	QDockWidget* dockVolumeView;
 
 	GLWindow3D* volumeWindow;
 	GLWindow2D* bscanWindow;
+    GLWindow2D* bscanWindow2;
 	GLWindow2D* enFaceViewWindow;
+    GLWindow2D* retardanceWindow;
+    GLWindow2D* enFaceViewWindow2;
 	PlotWindow1D* plot1D;
 
 	bool isDock2DClosed;
+    bool isDock2D2Closed;
 	bool isDockEnFaceViewClosed;
+    bool isDockRetardanceClosed;
 	bool isDockVolumeViewClosed;
 
 	QOpenGLContext *context;
@@ -187,7 +198,9 @@ signals:
 	void error(QString);
 	void info(QString);
 	void glBufferTextureSizeBscan(unsigned int width, unsigned int height, unsigned int depth);
-	void glBufferTextureSizeEnFaceView(unsigned int width, unsigned int height, unsigned int depth);
+    void glBufferTextureSizeBscan2(unsigned int width, unsigned int height, unsigned int depth);
+    void glBufferTextureSizeEnFaceView(unsigned int width, unsigned int height, unsigned int depth);
+    void glBufferTextureSizeRetardance(unsigned int width, unsigned int height, unsigned int depth);
 	void linesPerBufferChanged(int linesPerBuffer);
 	void closeDock2D();
 	void reopenDock2D();

@@ -48,7 +48,7 @@ void Gpu2HostNotifier::emitProcessedRecordDone(void* recordBuffer) {
 
 void Gpu2HostNotifier::emitCurrentStreamingBuffer(void* streamingBuffer) {
 	OctAlgorithmParameters* params = OctAlgorithmParameters::getInstance();
-	emit newGpuDataAvailible(streamingBuffer, params->bitDepth, params->samplesPerLine / 2, params->ascansPerBscan, params->bscansPerBuffer, params->buffersPerVolume, params->currentBufferNr);
+    emit newGpuDataAvailible(streamingBuffer, params->bitDepth, params->samplesPerLine / 2, params->ascansPerBscan, params->bscansPerBuffer, params->buffersPerVolume, params->bscansPerComponent, params->currentBufferNr);
 }
 
 void CUDART_CB Gpu2HostNotifier::dh2StreamingCallback(cudaStream_t event, cudaError_t status, void *currStreamingBuffer) {

@@ -85,8 +85,11 @@ void Processing::slot_start(AcquisitionSystem* system){
 	if (system != nullptr) {
 		//emit initOpenGL(&(this->context), &(this->surface), this->thread());
 		emit info(tr("GPU processing initialization..."));
-		emit initOpenGLenFaceView();
 		emit initOpenGL((this->context), (this->surface), this->thread());
+        emit initOpenGLBScan2();
+        emit initOpenGLretardance();
+        emit initOpenGLenFaceView();
+
 		QCoreApplication::processEvents();
 
 		AcquisitionBuffer* buffer = system->buffer;
@@ -217,6 +220,19 @@ void Processing::slot_updateDisplayedBscanFrame(unsigned int frameNr, unsigned i
 	}
 }
 
+void Processing::slot_updateDisplayedBscan2Frame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction){
+    this->octParams->frameNrBScan2 = frameNr;
+    this->octParams->functionFramesBscan2 = displayFunctionFrames;
+    this->octParams->displayFunctionBscan2 = displayFunction;
+
+    if(this->isProcessing && this->buffersPerSecond > 0.0 && this->buffersPerSecond < LOW_FRAMERATE){
+        this->context->makeCurrent(this->surface);
+        changeDisplayedBscan2Frame(frameNr, displayFunctionFrames, displayFunction);
+        this->context->swapBuffers(this->surface);
+        this->context->doneCurrent();
+    }
+}
+
 void Processing::slot_updateDisplayedEnFaceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction){
 	this->octParams->frameNrEnFaceView = frameNr;
 	this->octParams->functionFramesEnFaceView = displayFunctionFrames;
@@ -230,6 +246,19 @@ void Processing::slot_updateDisplayedEnFaceFrame(unsigned int frameNr, unsigned 
 	}
 }
 
+void Processing::slot_updateDisplayedRetardanceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction){
+    this->octParams->frameNrRetardance = frameNr;
+    this->octParams->functionFramesRetardance = displayFunctionFrames;
+    this->octParams->displayFunctionRetardance = displayFunction;
+
+    if(this->isProcessing && this->buffersPerSecond > 0.0 && this->buffersPerSecond < LOW_FRAMERATE){
+        this->context->makeCurrent(this->surface);
+        changeDisplayedRetardanceFrame(frameNr, displayFunctionFrames, displayFunction);
+        this->context->swapBuffers(this->surface);
+        this->context->doneCurrent();
+    }
+}
+
 void Processing::slot_registerBscanOpenGLbufferWithCuda(unsigned int bufferId){
 	if(this->context->makeCurrent(this->surface)){
 		cuda_registerGlBufferBscan(bufferId);
@@ -237,11 +266,25 @@ void Processing::slot_registerBscanOpenGLbufferWithCuda(unsigned int bufferId){
 	}
 }
 
+void Processing::slot_registerBscan2OpenGLbufferWithCuda(unsigned int bufferId){
+    if(this->context->makeCurrent(this->surface)){
+        cuda_registerGlBufferBscan2(bufferId);
+        this->context->doneCurrent();
+    }
+}
+
 void Processing::slot_registerEnFaceViewOpenGLbufferWithCuda(unsigned int bufferId){
 	if(this->context->makeCurrent(this->surface)){
 		cuda_registerGlBufferEnFaceView(bufferId);
 		this->context->doneCurrent();
 	}
+}
+
+void Processing::slot_registerRetardanceOpenGLbufferWithCuda(unsigned int bufferId){
+    if(this->context->makeCurrent(this->surface)){
+        cuda_registerGlBufferRetardance(bufferId);
+        this->context->doneCurrent();
+    }
 }
 
 void Processing::slot_registerVolumeViewOpenGLbufferWithCuda(unsigned int bufferId){

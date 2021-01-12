@@ -75,13 +75,21 @@ OctAlgorithmParameters::OctAlgorithmParameters()
 
 	this->resamplingInterpolation = INTERPOLATION::LINEAR;
 	this->frameNr = 0;
+    this->frameNrBScan2 = 0;
 	this->frameNrEnFaceView = 0;
+    this->frameNrRetardance = 0;
 	this->functionFramesEnFaceView = 0;
+    this->functionFramesRetardance = 0;
 	this->functionFramesBscan = 0;
+    this->functionFramesBscan2 = 0;
 	this->displayFunctionBscan = 0;
+    this->displayFunctionBscan2 = 0;
 	this->displayFunctionEnFaceView = 0;
+    this->displayFunctionRetardance = 0;
 	this->bscanViewEnabled = true;
+    this->bscan2ViewEnabled = true;
 	this->enFaceViewEnabled = true;
+    this->retardanceViewEnabled = true;
 	this->volumeViewEnabled = false;
 
 	this->samplesPerLine = 100;

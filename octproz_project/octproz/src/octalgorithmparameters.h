@@ -67,6 +67,7 @@ public:
 	unsigned int ascansPerBscan;
 	unsigned int bscansPerBuffer;
 	unsigned int buffersPerVolume;
+    unsigned int bscansPerComponent;
 	unsigned int bitDepth;
 	bool acquisitionParamsChanged;
 	
@@ -110,17 +111,25 @@ public:
 	//visualization
 	//todo: put all visualization params in a single struct and use an enum for displayfunction
 	unsigned int frameNr; /// Current number of the displayed frame.
+    unsigned int frameNrBScan2; /// Current number of the displayed frame.
 	unsigned int frameNrEnFaceView;
+    unsigned int frameNrRetardance;
 	unsigned int functionFramesEnFaceView;
+    unsigned int functionFramesRetardance;
 	unsigned int functionFramesBscan;
+    unsigned int functionFramesBscan2;
 	int displayFunctionBscan;
+    int displayFunctionBscan2;
 	int displayFunctionEnFaceView;
+    int displayFunctionRetardance;
 	enum DISPLAY_FUNCTION {
 		AVERAGING,
 		MIP
 	};
 	bool bscanViewEnabled;
+    bool bscan2ViewEnabled;
 	bool enFaceViewEnabled;
+    bool retardanceViewEnabled;
 	bool volumeViewEnabled;
 
 	//recording

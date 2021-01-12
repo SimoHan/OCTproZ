@@ -73,9 +73,13 @@ public slots :
 	void slot_start(AcquisitionSystem* system);
 	void slot_enableRecording(bool enableRawRecording, bool enableProcessedRecording);
 	void slot_updateDisplayedBscanFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
-	void slot_updateDisplayedEnFaceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+    void slot_updateDisplayedBscan2Frame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+    void slot_updateDisplayedEnFaceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
+    void slot_updateDisplayedRetardanceFrame(unsigned int frameNr, unsigned int displayFunctionFrames, int displayFunction);
 	void slot_registerBscanOpenGLbufferWithCuda(unsigned int openGLbufferId);
-	void slot_registerEnFaceViewOpenGLbufferWithCuda(unsigned int openGLbufferId);
+    void slot_registerBscan2OpenGLbufferWithCuda(unsigned int openGLbufferId);
+    void slot_registerEnFaceViewOpenGLbufferWithCuda(unsigned int openGLbufferId);
+    void slot_registerRetardanceOpenGLbufferWithCuda(unsigned int openGLbufferId);
 	void slot_registerVolumeViewOpenGLbufferWithCuda(unsigned int openGLbufferId);
 	void enableGpu2HostStreaming(bool enableStreaming);
 	void registerRecordHostBuffer(void* buffer, size_t size);
@@ -88,7 +92,9 @@ signals :
 	//void initOpenGL(QOpenGLContext** processingContext, QOffscreenSurface** processingSurface, QThread* processingThread);
 	void initializationDone();
 	void initOpenGL(QOpenGLContext* processingContext, QOffscreenSurface* processingSurface, QThread* processingThread);
-	void initOpenGLenFaceView();
+    void initOpenGLBScan2();
+    void initOpenGLenFaceView();
+    void initOpenGLretardance();
 	void initRawRecorder(RecordingParams params);
 	void initProcessedRecorder(RecordingParams params);
 	void processingDone();

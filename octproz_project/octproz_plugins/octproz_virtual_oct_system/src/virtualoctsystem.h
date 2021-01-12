@@ -51,9 +51,11 @@ public:
 
 private:
 	FILE* file;
+    FILE* file2;
 	VirtualOCTSystemSettingsDialog* systemDialog;
 	simulatorParams currParams;
 	AcquisitionBuffer* multiBuffer;
+    void* cacheBuffer;
 
 	bool init();
 	void cleanup();

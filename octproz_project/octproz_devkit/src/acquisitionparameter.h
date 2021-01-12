@@ -33,6 +33,7 @@ struct AcquisitionParams {
 	unsigned int ascansPerBscan;
 	unsigned int bscansPerBuffer;
 	unsigned int buffersPerVolume;
+    unsigned int bscansPerComponent;
 	unsigned int bitDepth;
 };
 

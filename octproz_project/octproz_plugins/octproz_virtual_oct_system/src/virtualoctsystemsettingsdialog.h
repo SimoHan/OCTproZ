@@ -26,12 +26,14 @@ SOFTWARE.
 
 #define SYSNAME "sys_name"
 #define FILEPATH "file_path"
+#define FILE2PATH "file2_path"
 #define BITDEPTH "bit_depth"
 #define WIDTH "width"
 #define HEIGHT "height"
 #define DEPTH "depth"
 #define BUFFERS_PER_VOLUME "buffers_per_volume"
 #define BUFFERS_FROM_FILE "buffers_from_file"
+#define BSCANS_PER_COMPONENT "bscans_per_component"
 #define WAITTIME "wait_time"
 
 
@@ -44,12 +46,14 @@ SOFTWARE.
 
 struct simulatorParams {
 	QString filePath;
+    QString file2Path;
 	int bitDepth;
 	int width;
 	int height;
 	int depth;
 	int buffersPerVolume;
 	int buffersFromFile;
+    int bscansPerComponent;
 	int waitTimeUs;
 };
 
@@ -73,6 +77,7 @@ private:
 
 public slots:
 	void slot_selectFile();
+    void slot_selectFile2();
 	void slot_apply();
 	void slot_enableGui(bool enable);
 	void slot_checkWidthValue();

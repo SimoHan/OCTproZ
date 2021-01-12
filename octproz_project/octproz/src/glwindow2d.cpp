@@ -94,8 +94,8 @@ void GLWindow2D::slot_changeBufferAndTextureSize(unsigned int width, unsigned in
 	this->width = width <= 1 ? 128 : width; //width and height shall not be zero. 128 is an arbitrary value greater 1 and a power of 2
 	this->height = height <= 1 ? 128 : height;
 	this->depth = depth;
-	this->panel->setMaxFrame(depth-1);
-	this->panel->setMaxAverage(depth-1);
+    this->panel->setMaxFrame(depth/2-1);
+    this->panel->setMaxAverage(depth-1);
 
 	if(!this->initialized){
 		this->changeBufferSizeFlag = true;
@@ -107,9 +107,9 @@ void GLWindow2D::slot_changeBufferAndTextureSize(unsigned int width, unsigned in
 	glDeleteBuffers(1, &(this->buf));
 	glGenBuffers(1, &(this->buf));
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, this->buf);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, (this->width * this->height * sizeof(float)), 0, GL_DYNAMIC_COPY);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, (this->width * this->height * sizeof(float)*3), 0, GL_DYNAMIC_COPY);
 	glBindTexture(GL_TEXTURE_2D, this->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, this->width, this->height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->width, this->height, 0, GL_RGB, GL_FLOAT, 0);
 	doneCurrent();
 	emit registerBufferCudaGL(this->buf);
 
@@ -231,11 +231,11 @@ void GLWindow2D::initializeGL(){
 
 	glGenBuffers(1, &buf);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, buf);
-	glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, (this->width * this->height * sizeof(float)), 0, GL_DYNAMIC_COPY);
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    glBufferData(GL_PIXEL_UNPACK_BUFFER_ARB, (this->width * this->height * sizeof(float)*3), 0, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glGenTextures(1, &(this->texture));
 	glBindTexture(GL_TEXTURE_2D, this->texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, this->width, this->height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->width, this->height, 0, GL_RGB, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -253,16 +253,16 @@ void GLWindow2D::initializeGL(){
 }
 
 void GLWindow2D::paintGL(){
-	glLoadIdentity();
+    glLoadIdentity();
 	glTranslatef(this->xTranslation, this->yTranslation, 0);
 	glRotatef(this->rotationAngle, 0.0, 0.0, 1.0);
 	glScalef(this->scaleFactor, this->scaleFactor, 0.f);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, this->buf);
 	glBindTexture(GL_TEXTURE_2D, this->texture);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, this->width, this->height, GL_RGB, GL_FLOAT, 0);
 	glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
 	glEnable(GL_TEXTURE_2D);
-	glColor3f(1.0, 1.0, 1.0);
+    glColor3f(1.0, 1.0, 1.0);
 	glBegin(GL_QUADS);
 		glTexCoord2f(0, 1), glVertex2f(-this->screenWidthScaled, -this->screenHeightScaled); //place upper left texture coordinate to bottom left screen position
 		glTexCoord2f(1, 1), glVertex2f(-this->screenWidthScaled, this->screenHeightScaled); //upper right texture coordinate to upper left screen position
